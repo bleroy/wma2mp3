@@ -22,7 +22,10 @@ Wma2mp3 will scan sourcepath recursively, will copy all files but wma files, whi
 wma2mp3 -c sourcepath targetpath
 ```
 
-Specifying the 'c' flag will do a comparison in size of source wma files with their mp3 converted counterparts,
-and will print out the path of any file that is smaller than its source by more than {deviation}% in size.
-This is useful to do a sanity check on the results of a bulk conversion, as corrupted conversions will often
-result in incomplete files.
+Specifying the 'c' flag will do a comparison in size of source wma files with their mp3 converted counterparts, and will print out the path of any file that is smaller than its source by more than {deviation}% in size. This is useful to do a sanity check on the results of a bulk conversion, as corrupted conversions will often result in incomplete files.
+
+```bat
+wma2mp3 -d targetpath
+```
+
+Specifying the 'd' flag will scan the target path recursively for duplicate files, which are recognized as `filename (1).mp3` where `filename.mp3` exists.
