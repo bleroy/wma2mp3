@@ -23,29 +23,66 @@ Specifying the 'c' flag will do a comparison in size of source wma files with th
 and will print out the path of any file that is smaller than its source by more than {deviation}% in size.
 This is useful to do a sanity check on the results of a bulk conversion, as corrupted conversions will often
 result in incomplete files.
+
+wma2mp3 -d targetpath
+
+Specifying the 'd' flag will scan the target path recursively for duplicate files, which are recognized as
+""filename (1).mp3"" where ""filename.mp3"" exists.
 ");
                 return;
             }
             var check = args[0].Equals("-c", StringComparison.InvariantCultureIgnoreCase);
-            var source = check ? args[1] : args[0];
-            var target = check ? args[2] : args[3];
-            if (check)
+            var removeDuplicates = args[0].Equals("-d", StringComparison.InvariantCultureIgnoreCase);
+
+            var target = removeDuplicates ? args[1] : (check ? args[2] : args[1]);
+
+            if (removeDuplicates)
             {
-                Console.WriteLine($"Checking relative sizes of all wma and mp3 from {source} to {target}.");
-                Check(source, target);
+                Console.WriteLine($"Removing duplicates from {target}.");
+                FindAndRemoveDuplicates(target);
             }
             else
             {
-                Console.WriteLine($"Converting all wma from {source} to {target}.");
-                var ffmpeg = Path.GetFullPath(".\\ffmpeg.exe");
-                if (!File.Exists(ffmpeg))
+                var source = check ? args[1] : args[0];
+
+                if (check)
                 {
-                    Console.WriteLine("Couldn't find ffmpeg.exe on the current path.");
-                    return;
+                    Console.WriteLine($"Checking relative sizes of all wma and mp3 from {source} to {target}.");
+                    Check(source, target);
                 }
-                FindAndConvert(source, target, ffmpeg);
+                else
+                {
+                    Console.WriteLine($"Converting all wma from {source} to {target}.");
+                    var ffmpeg = Path.GetFullPath(".\\ffmpeg.exe");
+                    if (!File.Exists(ffmpeg))
+                    {
+                        Console.WriteLine("Couldn't find ffmpeg.exe on the current path.");
+                        return;
+                    }
+                    FindAndConvert(source, target, ffmpeg);
+                }
             }
-//            Console.ReadKey();
+            Console.ReadKey();
+        }
+
+        static void FindAndRemoveDuplicates(string target)
+        {
+            // Recurse into subdirectories.
+            foreach (var subdirectoryFullPath in Directory.EnumerateDirectories(target))
+            {
+                var subdirectory = Path.GetFileName(subdirectoryFullPath);
+                FindAndRemoveDuplicates(Path.Combine(target, subdirectory));
+            }
+            // Find mp3s and copy them over if they don't already exist.
+            foreach (var mp3 in Directory.EnumerateFiles(target, "* (1).mp3", SearchOption.TopDirectoryOnly))
+            {
+                var original = Path.Combine(target, mp3.Substring(0, mp3.Length - 8) + ".mp3");
+                if (File.Exists(original))
+                {
+                    Console.WriteLine($"- {mp3}");
+                    File.Delete(mp3);
+                }
+            }
         }
 
         static void FindAndConvert(string source, string target, string ffmpeg)
